@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(composer:*)",
+      "Bash(php artisan jetstream:install:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(php artisan make:migration:*)",
+      "Bash(php artisan migrate:fresh:*)",
+      "Bash(php artisan make:model:*)",
+      "Bash(php artisan make:seeder:*)",
+      "Bash(php artisan make:controller:*)",
+      "Bash(php artisan make:event:*)",
+      "Bash(php artisan route:list:*)",
+      "Bash(php artisan:*)",
+      "Bash(PGPASSWORD=SothL1485 psql -h 167.172.85.30 -U root -c \"CREATE DATABASE \"\"online-therapy\"\";\")",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

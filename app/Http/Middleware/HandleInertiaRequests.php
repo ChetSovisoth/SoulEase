@@ -37,7 +37,8 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
-            //
+            'locale' => app()->getLocale(),
+            'translations' => \App\Helpers\TranslationHelper::getTranslations(),
         ];
     }
 }

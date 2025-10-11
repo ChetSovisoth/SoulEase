@@ -13,9 +13,10 @@ class MessageController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        $selectedUserId = $request->query('user');
 
-        // Get conversations (unique users the current user has messaged with)
-        $conversations = Message::where('sender_id', $user->id)
+        // Get all conversations with message counts and last message
+        $conversationUsers = Message::where('sender_id', $user->id)
             ->orWhere('receiver_id', $user->id)
             ->with(['sender', 'receiver'])
             ->latest()
@@ -26,8 +27,62 @@ class MessageController extends Controller
             ->unique('id')
             ->values();
 
+        // Build conversations with additional data
+        $conversations = $conversationUsers->map(function ($conversationUser) use ($user) {
+            $lastMessage = Message::between($user->id, $conversationUser->id)
+                ->latest()
+                ->first();
+
+            $unreadCount = Message::where('sender_id', $conversationUser->id)
+                ->where('receiver_id', $user->id)
+                ->where('is_read', false)
+                ->count();
+
+            return [
+                'user' => $conversationUser,
+                'last_message' => $lastMessage,
+                'unread_count' => $unreadCount,
+            ];
+        });
+
+        // Get messages for selected user if provided
+        $initialMessages = [];
+        if ($selectedUserId) {
+            $selectedUser = User::find($selectedUserId);
+            if ($selectedUser) {
+                // Add selected user to conversations if not already there
+                $existsInConversations = $conversations->contains(function ($conv) use ($selectedUserId) {
+                    return $conv['user']->id == $selectedUserId;
+                });
+
+                if (!$existsInConversations) {
+                    $conversations->prepend([
+                        'user' => $selectedUser,
+                        'last_message' => null,
+                        'unread_count' => 0,
+                    ]);
+                }
+
+                $initialMessages = Message::between($user->id, $selectedUser->id)
+                    ->with(['sender', 'receiver'])
+                    ->orderBy('created_at', 'asc')
+                    ->get();
+
+                // Mark messages as read
+                Message::where('sender_id', $selectedUser->id)
+                    ->where('receiver_id', $user->id)
+                    ->where('is_read', false)
+                    ->update([
+                        'is_read' => true,
+                        'read_at' => now(),
+                    ]);
+            }
+        }
+
         return Inertia::render('Messages/Index', [
             'conversations' => $conversations,
+            'initialMessages' => $initialMessages,
+            'selectedUserId' => $selectedUserId ? (int)$selectedUserId : null,
         ]);
     }
 
@@ -76,7 +131,7 @@ class MessageController extends Controller
         // Broadcast message event
         broadcast(new MessageSent($message))->toOthers();
 
-        return response()->json($message, 201);
+        return back();
     }
 
     public function unreadCount(Request $request)

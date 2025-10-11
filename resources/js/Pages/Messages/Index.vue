@@ -35,12 +35,12 @@
                                                 </span>
                                             </div>
                                         </div>
-                                        <div class="ml-3 flex-1 text-left">
-                                            <div class="flex items-center justify-between">
-                                                <p class="text-sm font-medium text-gray-900 dark:text-white">
+                                        <div class="ml-3 flex-1 text-left min-w-0">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
                                                     {{ conversation.user.name }}
                                                 </p>
-                                                <p v-if="conversation.last_message" class="text-xs text-gray-500 dark:text-gray-400">
+                                                <p v-if="conversation.last_message" class="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
                                                     {{ formatMessageTime(conversation.last_message.created_at) }}
                                                 </p>
                                             </div>
@@ -185,6 +185,8 @@ const formatMessageTime = (date) => {
 };
 
 const selectConversation = (user) => {
+    if (!user || !user.id) return;
+
     selectedUser.value = user;
     messageForm.receiver_id = user.id;
 
@@ -202,12 +204,27 @@ const selectConversation = (user) => {
 const sendMessage = () => {
     if (!messageForm.content.trim()) return;
 
+    const tempMessage = {
+        id: Date.now(),
+        sender_id: currentUserId.value,
+        receiver_id: messageForm.receiver_id,
+        content: messageForm.content,
+        created_at: new Date().toISOString(),
+    };
+
+    // Add message to the list immediately
+    messages.value.push(tempMessage);
+    scrollToBottom();
+
     messageForm.post(route('messages.store'), {
         preserveScroll: true,
         onSuccess: () => {
             messageForm.reset('content');
-            // Message will be added to the list via Echo
         },
+        onError: () => {
+            // Remove the temp message if there was an error
+            messages.value = messages.value.filter(m => m.id !== tempMessage.id);
+        }
     });
 };
 

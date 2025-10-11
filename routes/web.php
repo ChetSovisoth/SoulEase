@@ -6,6 +6,7 @@ use App\Http\Controllers\AvailabilitySlotController;
 use App\Http\Controllers\TherapySessionController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\LocaleController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -16,6 +17,19 @@ Route::get('/', function () {
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
+    ]);
+});
+
+// Locale switcher
+Route::get('/locale/{locale}', [LocaleController::class, 'switch'])->name('locale.switch');
+
+// Debug route
+Route::get('/test-translations', function () {
+    \Log::info('Session locale: ' . session('locale', 'not set'));
+    \Log::info('App locale: ' . app()->getLocale());
+    return Inertia::render('Test', [
+        'sessionLocale' => session('locale', 'not set'),
+        'appLocale' => app()->getLocale(),
     ]);
 });
 

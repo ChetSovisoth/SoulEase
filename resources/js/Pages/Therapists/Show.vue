@@ -245,6 +245,7 @@ const selectedSlot = ref(null);
 const showBookingModal = ref(false);
 
 const bookingForm = useForm({
+    therapist_id: props.therapist.id,
     availability_slot_id: null,
 });
 
@@ -299,7 +300,7 @@ const confirmBooking = () => {
         onSuccess: () => {
             showBookingModal.value = false;
             selectedSlot.value = null;
-            router.visit(route('sessions.index'));
+            // Controller will redirect to sessions.show
         },
     });
 };

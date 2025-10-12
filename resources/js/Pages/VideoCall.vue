@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import Peer from 'simple-peer';
 import axios from 'axios';
 
 const props = defineProps({
@@ -12,12 +11,20 @@ const props = defineProps({
 const localVideo = ref(null);
 const remoteVideo = ref(null);
 const localStream = ref(null);
-const peer = ref(null);
+const peerConnection = ref(null);
 const onlineUsers = ref([]);
 const inCall = ref(false);
 const callingUser = ref(null);
 
 let echoChannel = null;
+
+// ICE servers configuration (using free STUN servers)
+const iceServers = {
+    iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+    ]
+};
 
 onMounted(async () => {
     // Join presence channel first (works without camera)
@@ -38,7 +45,7 @@ onMounted(async () => {
             })
             .listen('.StartVideoChat', (data) => {
                 if (data.data.userToCall === props.authUser.id) {
-                    answerCall(data.data);
+                    handleIncomingCall(data.data);
                 }
             });
 
@@ -65,8 +72,8 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
     // Clean up
-    if (peer.value) {
-        peer.value.destroy();
+    if (peerConnection.value) {
+        peerConnection.value.close();
     }
     if (localStream.value) {
         localStream.value.getTracks().forEach(track => track.stop());
@@ -80,85 +87,157 @@ const isUserOnline = (userId) => {
     return onlineUsers.value.some(u => u.id === userId);
 };
 
-const callUser = (user) => {
+const callUser = async (user) => {
     if (!confirm(`Call ${user.name}?`)) {
+        return;
+    }
+
+    if (!localStream.value) {
+        alert('Camera not initialized. Please refresh the page and allow camera access.');
         return;
     }
 
     callingUser.value = user;
 
-    peer.value = new Peer({
-        initiator: true,
-        trickle: false,
-        stream: localStream.value
+    // Create peer connection
+    peerConnection.value = new RTCPeerConnection(iceServers);
+
+    // Add local stream tracks to peer connection
+    localStream.value.getTracks().forEach(track => {
+        peerConnection.value.addTrack(track, localStream.value);
     });
 
-    peer.value.on('signal', (data) => {
+    // Handle incoming stream
+    peerConnection.value.ontrack = (event) => {
+        if (remoteVideo.value && event.streams[0]) {
+            remoteVideo.value.srcObject = event.streams[0];
+            inCall.value = true;
+        }
+    };
+
+    // Handle ICE candidates
+    peerConnection.value.onicecandidate = (event) => {
+        if (event.candidate) {
+            axios.post('/video-call/call-user', {
+                user_to_call: user.id,
+                signal_data: {
+                    type: 'ice-candidate',
+                    candidate: event.candidate
+                }
+            }).catch(err => console.error('Error sending ICE candidate:', err));
+        }
+    };
+
+    // Create and send offer
+    try {
+        const offer = await peerConnection.value.createOffer();
+        await peerConnection.value.setLocalDescription(offer);
+
         axios.post('/video-call/call-user', {
             user_to_call: user.id,
-            signal_data: data
+            signal_data: {
+                type: 'offer',
+                sdp: offer
+            }
         }).catch(err => {
             console.error('Error calling user:', err);
             alert('Failed to initiate call');
         });
-    });
-
-    peer.value.on('stream', (stream) => {
-        if (remoteVideo.value) {
-            remoteVideo.value.srcObject = stream;
-            inCall.value = true;
-        }
-    });
-
-    peer.value.on('error', (err) => {
-        console.error('Peer error:', err);
+    } catch (err) {
+        console.error('Error creating offer:', err);
         endCall();
-    });
+    }
 };
 
-const answerCall = (data) => {
+const handleIncomingCall = async (data) => {
     const caller = props.users.find(u => u.id === data.from);
 
-    if (!confirm(`Incoming call from ${caller?.name || 'Unknown'}. Accept?`)) {
-        return;
-    }
-
-    callingUser.value = caller;
-
-    peer.value = new Peer({
-        initiator: false,
-        trickle: false,
-        stream: localStream.value
-    });
-
-    peer.value.on('signal', (signalData) => {
-        axios.post('/video-call/call-user', {
-            user_to_call: data.from,
-            signal_data: signalData
-        }).catch(err => {
-            console.error('Error answering call:', err);
-        });
-    });
-
-    peer.value.on('stream', (stream) => {
-        if (remoteVideo.value) {
-            remoteVideo.value.srcObject = stream;
-            inCall.value = true;
+    // Handle different signal types
+    if (data.signalData.type === 'offer') {
+        if (!confirm(`Incoming call from ${caller?.name || 'Unknown'}. Accept?`)) {
+            return;
         }
-    });
 
-    peer.value.on('error', (err) => {
-        console.error('Peer error:', err);
-        endCall();
-    });
+        if (!localStream.value) {
+            alert('Camera not initialized. Please refresh the page and allow camera access.');
+            return;
+        }
 
-    peer.value.signal(data.signalData);
+        callingUser.value = caller;
+
+        // Create peer connection
+        peerConnection.value = new RTCPeerConnection(iceServers);
+
+        // Add local stream tracks
+        localStream.value.getTracks().forEach(track => {
+            peerConnection.value.addTrack(track, localStream.value);
+        });
+
+        // Handle incoming stream
+        peerConnection.value.ontrack = (event) => {
+            if (remoteVideo.value && event.streams[0]) {
+                remoteVideo.value.srcObject = event.streams[0];
+                inCall.value = true;
+            }
+        };
+
+        // Handle ICE candidates
+        peerConnection.value.onicecandidate = (event) => {
+            if (event.candidate) {
+                axios.post('/video-call/call-user', {
+                    user_to_call: data.from,
+                    signal_data: {
+                        type: 'ice-candidate',
+                        candidate: event.candidate
+                    }
+                }).catch(err => console.error('Error sending ICE candidate:', err));
+            }
+        };
+
+        try {
+            // Set remote description
+            await peerConnection.value.setRemoteDescription(new RTCSessionDescription(data.signalData.sdp));
+
+            // Create and send answer
+            const answer = await peerConnection.value.createAnswer();
+            await peerConnection.value.setLocalDescription(answer);
+
+            axios.post('/video-call/call-user', {
+                user_to_call: data.from,
+                signal_data: {
+                    type: 'answer',
+                    sdp: answer
+                }
+            }).catch(err => console.error('Error answering call:', err));
+        } catch (err) {
+            console.error('Error answering call:', err);
+            endCall();
+        }
+    } else if (data.signalData.type === 'answer') {
+        // Handle answer
+        if (peerConnection.value) {
+            try {
+                await peerConnection.value.setRemoteDescription(new RTCSessionDescription(data.signalData.sdp));
+            } catch (err) {
+                console.error('Error setting remote description:', err);
+            }
+        }
+    } else if (data.signalData.type === 'ice-candidate') {
+        // Handle ICE candidate
+        if (peerConnection.value && data.signalData.candidate) {
+            try {
+                await peerConnection.value.addIceCandidate(new RTCIceCandidate(data.signalData.candidate));
+            } catch (err) {
+                console.error('Error adding ICE candidate:', err);
+            }
+        }
+    }
 };
 
 const endCall = () => {
-    if (peer.value) {
-        peer.value.destroy();
-        peer.value = null;
+    if (peerConnection.value) {
+        peerConnection.value.close();
+        peerConnection.value = null;
     }
     if (remoteVideo.value) {
         remoteVideo.value.srcObject = null;

@@ -34,9 +34,13 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
             cd ${{ secrets.DEPLOY_PATH }}
-            
+
             # Install PHP dependencies
             composer install --no-dev --optimize-autoloader
+
+            # Install Node dependencies and build assets
+            npm install --legacy-peer-deps
+            npm run build
 
             # Clear & cache configs
             php artisan config:clear

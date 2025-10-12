@@ -7,6 +7,7 @@ use App\Http\Controllers\TherapySessionController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\VideoCallController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -80,5 +81,11 @@ Route::middleware([
         Route::get('/history', [PaymentController::class, 'history'])->name('history');
         Route::get('/{payment}', [PaymentController::class, 'show'])->name('show');
         Route::post('/{payment}/process', [PaymentController::class, 'process'])->name('process');
+    });
+
+    // Video Calls
+    Route::prefix('video-call')->name('video.')->group(function () {
+        Route::get('/', [VideoCallController::class, 'index'])->name('call');
+        Route::post('/call-user', [VideoCallController::class, 'callUser'])->name('call.user');
     });
 });

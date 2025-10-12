@@ -16,7 +16,8 @@
       "Bash(PGPASSWORD=SothL1485 psql -h 167.172.85.30 -U root -c \"CREATE DATABASE \"\"online-therapy\"\";\")",
       "Bash(npm run dev:*)",
       "Bash(curl:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "WebFetch(domain:claude.ai)"
     ],
     "deny": [],
     "ask": []

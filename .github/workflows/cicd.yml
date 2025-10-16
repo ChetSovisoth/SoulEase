@@ -51,6 +51,10 @@ jobs:
             php artisan view:clear
             php artisan view:cache
 
+            # Add permissions (so Laravel can write to storage & cache)
+            sudo chown -R www-data:www-data storage bootstrap/cache
+            sudo chmod -R 775 storage bootstrap/cache
+
             # Reload PHP-FPM & Nginx
             sudo systemctl reload php8.4-fpm
             sudo systemctl reload nginx

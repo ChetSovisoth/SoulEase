@@ -11,11 +11,17 @@
                         <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                         </svg>
-                        <span class="text-xl font-bold text-gray-900 dark:text-white">TherapyConnect</span>
+                        <span class="text-xl font-bold text-gray-900 dark:text-white">SoulEase</span>
                     </div>
 
                     <!-- Navigation Links -->
                     <div v-if="canLogin" class="flex items-center space-x-4">
+                        <Link
+                            :href="route('contact')"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
+                        >
+                            Contact
+                        </Link>
                         <Link
                             v-if="$page.props.auth.user"
                             :href="route('dashboard')"
@@ -78,7 +84,7 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-16">
                     <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                        Why Choose TherapyConnect?
+                        Why Choose SoulEase?
                     </h2>
                     <p class="text-lg text-gray-600 dark:text-gray-300">
                         Professional therapy made accessible and convenient
@@ -234,7 +240,7 @@
                             <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                             </svg>
-                            <span class="text-lg font-bold text-white">TherapyConnect</span>
+                            <span class="text-lg font-bold text-white">SoulEase</span>
                         </div>
                         <p class="text-sm">
                             Professional online therapy services connecting you with licensed therapists.
@@ -245,7 +251,7 @@
                         <h4 class="text-white font-semibold mb-4">Quick Links</h4>
                         <ul class="space-y-2 text-sm">
                             <li><a href="#features" class="hover:text-indigo-400 transition">Features</a></li>
-                            <li><a href="#" class="hover:text-indigo-400 transition">About Us</a></li>
+                            <li><Link :href="route('contact')" class="hover:text-indigo-400 transition">Contact Us</Link></li>
                             <li><a href="#" class="hover:text-indigo-400 transition">Privacy Policy</a></li>
                             <li><a href="#" class="hover:text-indigo-400 transition">Terms of Service</a></li>
                         </ul>
@@ -254,7 +260,7 @@
                     <div>
                         <h4 class="text-white font-semibold mb-4">Contact</h4>
                         <ul class="space-y-2 text-sm">
-                            <li>Email: support@therapyconnect.com</li>
+                            <li>Email: support@soulease.com</li>
                             <li>Phone: 1-800-THERAPY</li>
                             <li>Available 24/7 for support</li>
                         </ul>
@@ -262,7 +268,7 @@
                 </div>
 
                 <div class="border-t border-gray-800 pt-8 text-center text-sm">
-                    <p>&copy; 2025 TherapyConnect. All rights reserved.</p>
+                    <p>&copy; 2025 SoulEase. All rights reserved.</p>
                 </div>
             </div>
         </footer>

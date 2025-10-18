@@ -8,6 +8,7 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\VideoCallController;
+use App\Http\Controllers\Api\PaddleController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -95,4 +96,14 @@ Route::middleware([
         Route::get('/', [VideoCallController::class, 'index'])->name('call');
         Route::post('/call-user', [VideoCallController::class, 'callUser'])->name('call.user');
     });
+
+    // Paddle API routes (authenticated web routes)
+    Route::prefix('api')->group(function () {
+        Route::post('/create-paddle-price', [PaddleController::class, 'createPrice']);
+        Route::post('/calculate-session-price', [PaddleController::class, 'calculatePrice']);
+        Route::get('/session-duration-options', [PaddleController::class, 'getDurationOptions']);
+    });
 });
+
+// Paddle webhook (no auth middleware)
+Route::post('/api/paddle/webhook', [PaddleController::class, 'webhook']);

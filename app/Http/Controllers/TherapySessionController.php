@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\TherapySession;
 use App\Models\AvailabilitySlot;
 use App\Models\Payment;
+use App\Services\PricingService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
@@ -86,6 +87,7 @@ class TherapySessionController extends Controller
         $validated = $request->validate([
             'therapist_id' => 'required|exists:users,id',
             'availability_slot_id' => 'required|exists:availability_slots,id',
+            'duration_minutes' => 'integer|min:15|max:240',
         ]);
 
         $slot = AvailabilitySlot::findOrFail($validated['availability_slot_id']);
@@ -97,27 +99,31 @@ class TherapySessionController extends Controller
         // Mark slot as booked
         $slot->update(['is_booked' => true]);
 
+        // Determine session duration
+        $durationMinutes = $validated['duration_minutes'] ?? 60;
+
         // Create session
         $session = TherapySession::create([
             'patient_id' => $user->id,
             'therapist_id' => $validated['therapist_id'],
             'availability_slot_id' => $slot->id,
             'scheduled_at' => $slot->start_time,
-            'duration_minutes' => 60,
+            'duration_minutes' => $durationMinutes,
             'status' => 'pending',
             'video_room_id' => 'room-' . Str::uuid(),
         ]);
 
-        // Get therapist's hourly rate
+        // Calculate dynamic price based on duration
+        $pricingService = app(PricingService::class);
         $therapist = $session->therapist;
-        $hourlyRate = $therapist->therapistProfile->hourly_rate ?? 100;
+        $sessionPrice = $pricingService->calculateSessionPrice($therapist, $durationMinutes);
 
         // Create payment
         Payment::create([
             'therapy_session_id' => $session->id,
             'patient_id' => $user->id,
             'therapist_id' => $validated['therapist_id'],
-            'amount' => $hourlyRate,
+            'amount' => $sessionPrice,
             'currency' => 'USD',
             'status' => 'pending',
         ]);
@@ -140,6 +146,8 @@ class TherapySessionController extends Controller
 
         return Inertia::render('Sessions/Show', [
             'session' => $session,
+            'paddleToken' => config('services.paddle.client_token'),
+            'paddleVendorId' => (int)config('services.paddle.vendor_id'),
         ]);
     }
 

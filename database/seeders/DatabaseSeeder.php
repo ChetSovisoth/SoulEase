@@ -8,6 +8,7 @@ use App\Models\AvailabilitySlot;
 use App\Models\TherapySession;
 use App\Models\Message;
 use App\Models\Payment;
+use App\Services\PricingService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
@@ -233,11 +234,13 @@ class DatabaseSeeder extends Seeder
             'notes' => 'Initial consultation for anxiety management.',
         ]);
 
+        $pricingService = app(PricingService::class);
+
         Payment::create([
             'therapy_session_id' => $session1->id,
             'patient_id' => $patient1->id,
             'therapist_id' => $therapist1->id,
-            'amount' => 120.00,
+            'amount' => $pricingService->calculateSessionPrice($therapist1, 60), // $100 for 60min
             'currency' => 'USD',
             'status' => 'completed',
             'payment_method' => 'credit_card',
@@ -262,7 +265,7 @@ class DatabaseSeeder extends Seeder
             'therapy_session_id' => $session2->id,
             'patient_id' => $patient2->id,
             'therapist_id' => $therapist2->id,
-            'amount' => 150.00,
+            'amount' => $pricingService->calculateSessionPrice($therapist2, 60), // $100 for 60min
             'currency' => 'USD',
             'status' => 'pending',
             'payment_method' => 'credit_card',
@@ -287,7 +290,7 @@ class DatabaseSeeder extends Seeder
             'therapy_session_id' => $session3->id,
             'patient_id' => $patient3->id,
             'therapist_id' => $therapist3->id,
-            'amount' => 130.00,
+            'amount' => $pricingService->calculateSessionPrice($therapist3, 60), // $100 for 60min
             'currency' => 'USD',
             'status' => 'completed',
             'payment_method' => 'credit_card',
@@ -314,7 +317,7 @@ class DatabaseSeeder extends Seeder
             'therapy_session_id' => $pastSession->id,
             'patient_id' => $patient1->id,
             'therapist_id' => $therapist1->id,
-            'amount' => 120.00,
+            'amount' => $pricingService->calculateSessionPrice($therapist1, 60), // $100 for 60min
             'currency' => 'USD',
             'status' => 'completed',
             'payment_method' => 'credit_card',
@@ -340,7 +343,7 @@ class DatabaseSeeder extends Seeder
             'therapy_session_id' => $cancelledSession->id,
             'patient_id' => $patient4->id,
             'therapist_id' => $therapist2->id,
-            'amount' => 150.00,
+            'amount' => $pricingService->calculateSessionPrice($therapist2, 60), // $100 for 60min
             'currency' => 'USD',
             'status' => 'refunded',
             'payment_method' => 'credit_card',

@@ -166,13 +166,12 @@
                                         Payment is required to confirm this session
                                     </p>
                                     <div class="flex my-3 space-x-3">
-                                        <Link 
-                                            :href="route('payments.process', session.payment.id)"
-                                            method="post"
+                                        <button 
                                             as="button"
+                                            @click="openCheckout(`Therapy session with ${session.therapist.name}`, session.total_amount)"
                                             class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition">
                                             Pay Now with Cards
-                                        </Link>
+                                    </button>
 
                                         <button
                                             @click="showKHQRModal = true"
@@ -247,21 +246,32 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { Link, useForm, usePage, router } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { format, parseISO, differenceInMinutes } from 'date-fns';
+import axios from 'axios';
 
 const props = defineProps({
     session: Object,
+    paddleToken: String,
+    paddleVendorId: Number,
 });
 
 const page = usePage();
 
+// Initialize Paddle
+onMounted(() => {
+    if (props.paddleToken && window.Paddle) {
+        window.Paddle.Environment.set('sandbox'); // or 'sandbox' for testing
+        window.Paddle.Initialize({
+            token: props.paddleToken,
+        });
+    }
+});
+
 const confirmForm = useForm({});
 const completeForm = useForm({});
 const cancelForm = useForm({});
-// const paddle = new Paddle(process.env.PADDLE_SECRET_TOKEN);
 const showKHQRModal = ref(false);
-
 const isPatient = computed(() => page.props.auth.user.role === 'patient');
 const isTherapist = computed(() => page.props.auth.user.role === 'therapist');
 
@@ -294,6 +304,76 @@ const canCancelSession = computed(() => {
 });
 
 
+const openCheckout = async (productName, price, quantity = 1) => {
+    try {
+        // Step 1: Get the price_id from backend
+        // console.log('Fetching price_id for session:', {
+        //     duration: props.session.duration,
+        //     amount: price
+        // });
+
+        const response = await axios.post('/api/create-paddle-price', {
+            productName,
+            price,
+            quantity,
+            userId: props.session.patient.id,
+            duration_minutes: props.session.duration || 60
+        });
+
+        const { price_id } = response.data;
+
+        console.log('Received price_id:', price_id);
+
+        // Step 2: Open Paddle checkout with the price_id
+        if (!window.Paddle) {
+            console.error('Paddle is not loaded');
+            alert('Paddle payment system is not available. Please refresh the page.');
+            return;
+        }
+
+        console.log('Opening Paddle checkout with price_id:', price_id);
+
+        window.Paddle.Checkout.open({
+            items: [{
+                priceId: price_id,
+                quantity: quantity
+            }],
+            customer: {
+                email: props.session.patient.email
+            },
+            customData: {
+                user_id: props.session.patient.id.toString(),
+                session_id: props.session.id.toString(),
+            },
+            settings: {
+                displayMode: 'overlay',
+                theme: 'light',
+            },
+            eventCallback: function(event) {
+                console.log('Paddle event:', event);
+
+                if (event.name === 'checkout.completed') {
+                    console.log('Payment completed successfully!', event.data);
+                    // Reload the page to update payment status
+                    router.reload();
+                }
+
+                if (event.name === 'checkout.error') {
+                    console.error('Checkout error:', event.data);
+                }
+
+                if (event.name === 'checkout.closed') {
+                    console.log('Checkout closed');
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error("Failed to create checkout:", error);
+        const errorMsg = error.response?.data?.message || error.response?.data?.error || 'Failed to initiate payment. Please try again.';
+        alert(errorMsg);
+    }
+};
 
 
 const formatDate = (date) => {

@@ -39,4 +39,24 @@ return [
         'domain' => env('JITSI_DOMAIN', 'meet.jit.si'),
     ],
 
+    'paddle' => [
+        'api_key' => env('PADDLE_API_KEY'),
+        'vendor_id' => env('PADDLE_VENDOR_ID'),
+        'client_token' => env('PADDLE_CLIENT_SIDE_TOKEN'),
+        'product_id' => env('PADDLE_PRODUCT_ID'), // Add a default product ID for therapy sessions
+        'environment' => env('PADDLE_ENVIRONMENT', 'sandbox'), // sandbox or production
+
+        // Pre-configured price IDs for each session duration
+        'prices' => [
+            '30min' => env('PADDLE_PRICE_30MIN'),
+            '60min' => env('PADDLE_PRICE_60MIN'),
+            '90min' => env('PADDLE_PRICE_90MIN'),
+            '120min' => env('PADDLE_PRICE_120MIN'),
+            // Optional additional durations
+            // '45min' => env('PADDLE_PRICE_45MIN'),
+            // '150min' => env('PADDLE_PRICE_150MIN'),
+            // '180min' => env('PADDLE_PRICE_180MIN'),
+        ],
+    ]
+
 ];

@@ -17,7 +17,8 @@
       "Bash(npm run dev:*)",
       "Bash(curl:*)",
       "Bash(cat:*)",
-      "WebFetch(domain:claude.ai)"
+      "WebFetch(domain:claude.ai)",
+      "Bash(php:*)"
     ],
     "deny": [],
     "ask": []

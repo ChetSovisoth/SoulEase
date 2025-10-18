@@ -165,15 +165,78 @@
                                     <p class="text-sm text-yellow-800 dark:text-yellow-200 mb-3">
                                         Payment is required to confirm this session
                                     </p>
-                                    <Link :href="route('payments.process', session.payment.id)"
-                                          method="post"
-                                          as="button"
-                                          class="inline-flex items-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 transition">
-                                        Pay Now
-                                    </Link>
+                                    <div class="flex my-3 space-x-3">
+                                        <Link 
+                                            :href="route('payments.process', session.payment.id)"
+                                            method="post"
+                                            as="button"
+                                            class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition">
+                                            Pay Now with Cards
+                                        </Link>
+
+                                        <button
+                                            @click="showKHQRModal = true"
+                                            class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                                            Pay Now with KHQR
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KHQR Payment Modal -->
+        <div v-if="showKHQRModal" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                <!-- Background overlay -->
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showKHQRModal = false"></div>
+
+                <!-- Modal panel -->
+                <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4" id="modal-title">
+                                    Pay with KHQR
+                                </h3>
+
+                                <div class="mt-4 flex flex-col items-center">
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                        Scan the QR code below to complete your payment
+                                    </p>
+
+                                    <!-- QR Code Image -->
+                                    <div class="p-4 rounded-lg shadow-md">
+                                        <img
+                                            src="/storage/KHQR.png"
+                                            alt="KHQR Payment Code"
+                                            class="w-64 h-64 object-contain"
+                                        />
+                                    </div>
+
+                                    <div class="mt-4 text-center">
+                                        <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                                            Amount: ${{ session.total_amount }}
+                                        </p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                                            After payment, please wait for confirmation
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button
+                            type="button"
+                            @click="showKHQRModal = false"
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+                            Close
+                        </button>
                     </div>
                 </div>
             </div>
@@ -184,7 +247,7 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { Link, useForm, usePage, router } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { format, parseISO, differenceInMinutes } from 'date-fns';
 
 const props = defineProps({
@@ -196,6 +259,8 @@ const page = usePage();
 const confirmForm = useForm({});
 const completeForm = useForm({});
 const cancelForm = useForm({});
+// const paddle = new Paddle(process.env.PADDLE_SECRET_TOKEN);
+const showKHQRModal = ref(false);
 
 const isPatient = computed(() => page.props.auth.user.role === 'patient');
 const isTherapist = computed(() => page.props.auth.user.role === 'therapist');
@@ -227,6 +292,9 @@ const canCancelSession = computed(() => {
     const minutesDiff = differenceInMinutes(scheduledTime, now);
     return minutesDiff > 1440; // 24 hours
 });
+
+
+
 
 const formatDate = (date) => {
     return format(parseISO(date), 'EEEE, MMMM d, yyyy');

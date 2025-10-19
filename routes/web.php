@@ -89,6 +89,7 @@ Route::middleware([
         Route::get('/history', [PaymentController::class, 'history'])->name('history');
         Route::get('/{payment}', [PaymentController::class, 'show'])->name('show');
         Route::post('/{payment}/process', [PaymentController::class, 'process'])->name('process');
+        Route::get('/complete', [PaymentController::class, 'complete'])->name('complete');
     });
 
     // Video Calls

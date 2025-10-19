@@ -312,17 +312,17 @@ const openCheckout = async (productName, price, quantity = 1) => {
         //     amount: price
         // });
 
-        const response = await axios.post('/api/create-paddle-price', {
-            productName,
-            price,
-            quantity,
-            userId: props.session.patient.id,
-            duration_minutes: props.session.duration || 60
-        });
+        // const response = await axios.post('/api/create-paddle-price', {
+        //     productName,
+        //     price,
+        //     quantity,
+        //     userId: props.session.patient.id,
+        //     duration_minutes: props.session.duration || 60
+        // });
 
         const { price_id } = response.data;
 
-        console.log('Received price_id:', price_id);
+        // console.log('Received price_id:', price_id);
 
         // Step 2: Open Paddle checkout with the price_id
         if (!window.Paddle) {
@@ -331,7 +331,7 @@ const openCheckout = async (productName, price, quantity = 1) => {
             return;
         }
 
-        console.log('Opening Paddle checkout with price_id:', price_id);
+        // console.log('Opening Paddle checkout with price_id:', price_id);
 
         window.Paddle.Checkout.open({
             items: [{
@@ -347,7 +347,9 @@ const openCheckout = async (productName, price, quantity = 1) => {
             },
             settings: {
                 displayMode: 'overlay',
-                theme: 'light',
+                theme: 'dark',
+                successUrl: 'https://soulease.sovisoth.com/payments/complete',
+
             },
             eventCallback: function(event) {
                 console.log('Paddle event:', event);

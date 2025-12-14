@@ -148,6 +148,7 @@ class TherapySessionController extends Controller
             'session' => $session,
             'paddleToken' => config('services.paddle.client_token'),
             'paddleVendorId' => (int)config('services.paddle.vendor_id'),
+            'price_id' => config('services.paddle.prices.60min')
         ]);
     }
 

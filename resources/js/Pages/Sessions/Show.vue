@@ -254,6 +254,7 @@ const props = defineProps({
     session: Object,
     paddleToken: String,
     paddleVendorId: Number,
+    price_id: String
 });
 
 const page = usePage();
@@ -320,7 +321,6 @@ const openCheckout = async (productName, price, quantity = 1) => {
         //     duration_minutes: props.session.duration || 60
         // });
 
-        const { price_id } = response.data;
 
         // console.log('Received price_id:', price_id);
 
@@ -335,7 +335,7 @@ const openCheckout = async (productName, price, quantity = 1) => {
 
         window.Paddle.Checkout.open({
             items: [{
-                priceId: price_id,
+                priceId: props.price_id,
                 quantity: quantity
             }],
             customer: {

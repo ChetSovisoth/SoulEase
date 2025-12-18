@@ -60,8 +60,31 @@ class PaymentController extends Controller
         // Update session status to confirmed
         $payment->therapySession->update(['status' => 'confirmed']);
 
-        return redirect()->route('sessions.show', $payment->therapySession)
+        return redirect()->route('payments.complete', $payment)
             ->with('success', 'Payment processed successfully!');
+    }
+
+    public function complete(Payment $payment)
+    {
+        $user = auth()->user();
+
+        if ($payment->patient_id !== $user->id) {
+            abort(403);
+        }
+
+        if ($payment->status !== 'completed') {
+            return redirect()->route('sessions.show', $payment->therapy_session_id)
+                ->withErrors(['payment' => 'Payment has not been completed yet.']);
+        }
+
+        $payment->load([
+            'therapySession.therapist.therapistProfile',
+            'patient',
+        ]);
+
+        return Inertia::render('Payments/Complete', [
+            'payment' => $payment,
+        ]);
     }
 
     public function history(Request $request)

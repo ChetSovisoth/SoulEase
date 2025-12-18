@@ -87,9 +87,9 @@ Route::middleware([
     // Payments
     Route::prefix('payments')->name('payments.')->group(function () {
         Route::get('/history', [PaymentController::class, 'history'])->name('history');
+        Route::get('/{payment}/complete', [PaymentController::class, 'complete'])->name('complete');
         Route::get('/{payment}', [PaymentController::class, 'show'])->name('show');
         Route::post('/{payment}/process', [PaymentController::class, 'process'])->name('process');
-        Route::get('/complete', [PaymentController::class, 'complete'])->name('complete');
     });
 
     // Video Calls

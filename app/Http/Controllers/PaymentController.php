@@ -60,23 +60,13 @@ class PaymentController extends Controller
         // Update session status to confirmed
         $payment->therapySession->update(['status' => 'confirmed']);
 
-        return redirect()->route('payments.complete', ['payment_id' => $payment->id])
+        return redirect()->route('payments.complete', $payment)
             ->with('success', 'Payment processed successfully!');
     }
 
-    public function complete(Request $request)
+    public function complete(Payment $payment)
     {
         $user = auth()->user();
-
-        // Get payment ID from query parameter
-        $paymentId = $request->query('payment_id');
-
-        if (!$paymentId) {
-            return redirect()->route('dashboard')
-                ->withErrors(['payment' => 'Invalid payment request.']);
-        }
-
-        $payment = Payment::findOrFail($paymentId);
 
         if ($payment->patient_id !== $user->id) {
             abort(403);

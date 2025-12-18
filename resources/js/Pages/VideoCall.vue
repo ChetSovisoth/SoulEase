@@ -43,9 +43,9 @@ onMounted(async () => {
             .leaving((user) => {
                 onlineUsers.value = onlineUsers.value.filter(u => u.id !== user.id);
             })
-            .listen('.StartVideoChat', (data) => {
-                if (data.data.userToCall === props.authUser.id) {
-                    handleIncomingCall(data.data);
+            .listen('StartVideoChat', (data) => {
+                if (data.userToCall === props.authUser.id) {
+                    handleIncomingCall(data);
                 }
             });
 
@@ -149,11 +149,11 @@ const callUser = async (user) => {
     }
 };
 
-const handleIncomingCall = async (data) => {
-    const caller = props.users.find(u => u.id === data.from);
+const handleIncomingCall = async (callData) => {
+    const caller = props.users.find(u => u.id === callData.from);
 
     // Handle different signal types
-    if (data.signalData.type === 'offer') {
+    if (callData.signalData.type === 'offer') {
         if (!confirm(`Incoming call from ${caller?.name || 'Unknown'}. Accept?`)) {
             return;
         }
@@ -196,14 +196,14 @@ const handleIncomingCall = async (data) => {
 
         try {
             // Set remote description
-            await peerConnection.value.setRemoteDescription(new RTCSessionDescription(data.signalData.sdp));
+            await peerConnection.value.setRemoteDescription(new RTCSessionDescription(callData.signalData.sdp));
 
             // Create and send answer
             const answer = await peerConnection.value.createAnswer();
             await peerConnection.value.setLocalDescription(answer);
 
             axios.post('/video-call/call-user', {
-                user_to_call: data.from,
+                user_to_call: callData.from,
                 signal_data: {
                     type: 'answer',
                     sdp: answer
@@ -213,20 +213,20 @@ const handleIncomingCall = async (data) => {
             console.error('Error answering call:', err);
             endCall();
         }
-    } else if (data.signalData.type === 'answer') {
+    } else if (callData.signalData.type === 'answer') {
         // Handle answer
         if (peerConnection.value) {
             try {
-                await peerConnection.value.setRemoteDescription(new RTCSessionDescription(data.signalData.sdp));
+                await peerConnection.value.setRemoteDescription(new RTCSessionDescription(callData.signalData.sdp));
             } catch (err) {
                 console.error('Error setting remote description:', err);
             }
         }
-    } else if (data.signalData.type === 'ice-candidate') {
+    } else if (callData.signalData.type === 'ice-candidate') {
         // Handle ICE candidate
-        if (peerConnection.value && data.signalData.candidate) {
+        if (peerConnection.value && callData.signalData.candidate) {
             try {
-                await peerConnection.value.addIceCandidate(new RTCIceCandidate(data.signalData.candidate));
+                await peerConnection.value.addIceCandidate(new RTCIceCandidate(callData.signalData.candidate));
             } catch (err) {
                 console.error('Error adding ICE candidate:', err);
             }

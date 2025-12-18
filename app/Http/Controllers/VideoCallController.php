@@ -27,7 +27,7 @@ class VideoCallController extends Controller
             'signalData' => $request->signal_data
         ];
 
-        broadcast(new StartVideoChat($data))->toOthers();
+        broadcast(new StartVideoChat($data));
 
         return response()->json(['success' => true]);
     }
